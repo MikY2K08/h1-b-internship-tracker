@@ -811,12 +811,14 @@ function render() {
 
 // ─── FETCH DATA ───────────────────────────────────────────────────────────────
 async function loadData() {
-  const README_URL = 'https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/README.md';
+  const README_URL = 'https://api.github.com/repos/SimplifyJobs/Summer2026-Internships/contents/README.md?ref=dev';
 
   try {
     const res = await fetch(README_URL);
     if (!res.ok) throw new Error('Failed to fetch');
-    const md = await res.text();
+    
+    const data = await res.json();
+    const md = atob(data.content.replace(/\n/g, ''));
 
     allInternships = parseMarkdownTable(md);
 
