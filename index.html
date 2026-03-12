@@ -819,7 +819,7 @@ async function loadData() {
     console.log('Response status:', res.status);
     const data = await res.json();
     console.log('Data received:', data);
-    const md = atob(data.content.replace(/\n/g, ''));
+    const md = atob(data.content.split('\n').join(''));
     console.log('Markdown length:', md.length);
     allInternships = parseMarkdownTable(md);
     console.log('Parsed internships:', allInternships.length);
