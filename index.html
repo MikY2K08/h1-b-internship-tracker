@@ -818,6 +818,8 @@ async function loadData() {
     console.log('Response status:', res.status);
     const md = await res.text();
     console.log('Markdown length:', md.length);
+    console.log('First 500 chars:', md.substring(0, 500));
+    console.log('Sample lines:', md.split('\n').filter(l => l.startsWith('|')).slice(0, 3));
     allInternships = parseMarkdownTable(md);
     console.log('Parsed internships:', allInternships.length);
     const h1bCount = allInternships.filter(r => r.h1bStatus === 'yes').length;
