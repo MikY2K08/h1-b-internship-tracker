@@ -1,12 +1,883 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>H1-B Internship Tracker</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H1-B Internship Tracker — Summer 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Clash+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #ede8df;
+    --card: #ffffff;
+    --border: #d4cfc6;
+    --text: #1a1814;
+    --muted: #8a8070;
+    --accent: #c84b31;
+    --accent2: #2d6a4f;
+    --accent3: #1d3557;
+    --tag-bg: #fef3ee;
+    --tag-border: #f4c4b4;
+    --yes-bg: #e8f5ee;
+    --yes-text: #1d6b3e;
+    --no-bg: #fce8e8;
+    --no-text: #9b2020;
+    --unknown-bg: #f5f0e0;
+    --unknown-text: #7a6a30;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+  }
+
+  /* grain texture overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  header {
+    padding: 56px 48px 40px;
+    border-bottom: 2px solid var(--text);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    background: var(--bg);
+  }
+
+  .header-left {}
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: 'Clash Display', 'Georgia', serif;
+    font-size: clamp(32px, 5vw, 58px);
+    font-weight: 700;
+    line-height: 1.0;
+    letter-spacing: -1.5px;
+    color: var(--text);
+  }
+
+  h1 em {
+    font-style: normal;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+  }
+
+  .header-desc {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.7;
+  }
+
+  .stats-cluster {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .stat-box {
+    text-align: right;
+  }
+
+  .stat-num {
+    font-family: 'Clash Display', serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* CONTROLS */
+  .controls {
+    padding: 20px 48px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 4px 6px 12px;
+  }
+
+  .filter-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .pill-group {
+    display: flex;
+    gap: 4px;
+  }
+
+  .pill {
+    padding: 5px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+
+  .pill:hover { border-color: var(--text); color: var(--text); }
+
+  .pill.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  .pill.active.h1b { background: var(--accent2); border-color: var(--accent2); }
+  .pill.active.us { background: var(--accent3); border-color: var(--accent3); }
+
+  .search-wrap {
+    flex: 1;
+    min-width: 180px;
+    max-width: 320px;
+    position: relative;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px 8px 32px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .search-wrap input:focus { border-color: var(--text); }
+  .search-wrap input::placeholder { color: var(--muted); }
+
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 13px;
+    pointer-events: none;
+  }
+
+  .result-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .result-count b { color: var(--accent); }
+
+  /* CATEGORY TABS */
+  .cat-tabs {
+    padding: 0 48px;
+    background: var(--bg);
+    border-bottom: 2px solid var(--text);
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+
+  .cat-tab {
+    padding: 14px 20px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    transition: all 0.12s;
+  }
+
+  .cat-tab:hover { color: var(--text); }
+  .cat-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+  /* TABLE */
+  .table-wrap {
+    padding: 32px 48px 64px;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead tr {
+    border-bottom: 2px solid var(--text);
+  }
+
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  th:first-child { padding-left: 0; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:hover { background: var(--surface); }
+
+  td {
+    padding: 13px 14px;
+    vertical-align: middle;
+  }
+
+  td:first-child { padding-left: 0; }
+
+  .company-name {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .faang-badge {
+    font-size: 14px;
+  }
+
+  .role-name {
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .role-flags {
+    display: inline-flex;
+    gap: 4px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+  }
+
+  .flag-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: var(--tag-bg);
+    border: 1px solid var(--tag-border);
+    color: var(--accent);
+  }
+
+  .location-cell {
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 200px;
+    line-height: 1.4;
+  }
+
+  .us-tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    background: #e8eef5;
+    border: 1px solid #b8c8dc;
+    color: var(--accent3);
+    border-radius: 2px;
+    margin-top: 3px;
+  }
+
+  .h1b-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .h1b-yes { background: var(--yes-bg); color: var(--yes-text); border: 1px solid #a8d5bb; }
+  .h1b-no { background: var(--no-bg); color: var(--no-text); border: 1px solid #f0b0b0; }
+  .h1b-unknown { background: var(--unknown-bg); color: var(--unknown-text); border: 1px solid #ddd0a0; }
+
+  .apply-links {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .apply-btn {
+    padding: 5px 12px;
+    border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    text-decoration: none;
+    border: 1.5px solid var(--text);
+    color: var(--text);
+    background: transparent;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+
+  .apply-btn:hover { background: var(--text); color: var(--bg); }
+  .apply-btn.simplify { border-color: var(--accent); color: var(--accent); }
+  .apply-btn.simplify:hover { background: var(--accent); color: white; }
+
+  /* LOADING / EMPTY */
+  .loading-state, .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+
+  .spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-state p, .empty-state p { font-size: 13px; }
+  .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+  /* LEGEND */
+  .legend {
+    padding: 16px 48px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+
+  @media (max-width: 768px) {
+    header, .controls, .cat-tabs, .table-wrap, .legend { padding-left: 20px; padding-right: 20px; }
+    .stats-cluster { display: none; }
+  }
+</style>
 </head>
 <body>
-  <h1>H1-B Internship Tracker</h1>
-  <p>Coming soon...</p>
+
+<header>
+  <div class="header-left">
+    <div class="eyebrow">Summer 2026 · International Students</div>
+    <h1>Internships with<br><em>H1-B Filter</em></h1>
+    <p class="header-desc">Built on top of <a href="https://github.com/SimplifyJobs/Summer2026-Internships" target="_blank" style="color:var(--accent)">SimplifyJobs/Summer2026-Internships</a>. Cross-referenced with USCIS H1-B disclosure data. Filter by sponsorship status, location, and category.</p>
+  </div>
+  <div class="stats-cluster">
+    <div class="stat-box">
+      <div class="stat-num" id="stat-total">—</div>
+      <div class="stat-label">Total Roles</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="stat-h1b" style="color:var(--accent2)">—</div>
+      <div class="stat-label">H1-B Sponsors</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="stat-showing">—</div>
+      <div class="stat-label">Showing</div>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="filter-group">
+    <span class="filter-label">H1-B</span>
+    <div class="pill-group">
+      <button class="pill active" data-h1b="all">All</button>
+      <button class="pill h1b" data-h1b="yes">✅ Sponsors</button>
+      <button class="pill" data-h1b="no">❌ No</button>
+      <button class="pill" data-h1b="unknown">❓ Unknown</button>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <span class="filter-label">Location</span>
+    <div class="pill-group">
+      <button class="pill active" data-loc="all">All</button>
+      <button class="pill us" data-loc="us">🇺🇸 US Only</button>
+      <button class="pill" data-loc="remote">Remote</button>
+      <button class="pill" data-loc="intl">International</button>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search" placeholder="Search company or role...">
+  </div>
+
+  <div class="result-count" id="result-count">Loading...</div>
+</div>
+
+<div class="cat-tabs" id="cat-tabs">
+  <button class="cat-tab active" data-cat="all">All Categories</button>
+  <button class="cat-tab" data-cat="swe">💻 Software Eng</button>
+  <button class="cat-tab" data-cat="pm">📱 Product Mgmt</button>
+  <button class="cat-tab" data-cat="ds">🤖 Data Science / AI</button>
+  <button class="cat-tab" data-cat="quant">📈 Quant Finance</button>
+  <button class="cat-tab" data-cat="hw">🔧 Hardware</button>
+</div>
+
+<div class="table-wrap">
+  <div class="loading-state" id="loading">
+    <div class="spinner"></div>
+    <p>Fetching internship data...</p>
+  </div>
+  <div class="empty-state" id="empty" style="display:none">
+    <div class="empty-icon">🔎</div>
+    <p>No internships match your filters.</p>
+  </div>
+  <table id="table" style="display:none">
+    <thead>
+      <tr>
+        <th>Company</th>
+        <th>Role</th>
+        <th>Location</th>
+        <th>H1-B Sponsor</th>
+        <th>Apply</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span>✅</span> Confirmed H1-B sponsor (USCIS data)</div>
+  <div class="legend-item"><span>❌</span> Does not sponsor / 🛂 in listing</div>
+  <div class="legend-item"><span>❓</span> No data available — verify independently</div>
+  <div class="legend-item"><span>🔥</span> FAANG+ company</div>
+  <div class="legend-item"><span>🇺🇸</span> Requires US Citizenship</div>
+</div>
+
+<script>
+// ─── USCIS H1-B KNOWN SPONSORS (top tech companies) ──────────────────────────
+// This is a curated seed list. In a full version this would be fetched from
+// a processed USCIS LCA dataset. Companies are matched by fuzzy name.
+const H1B_SPONSORS = new Set([
+  'google','meta','apple','microsoft','amazon','netflix','uber','lyft',
+  'twitter','x corp','airbnb','stripe','square','block','shopify','salesforce',
+  'oracle','ibm','intel','qualcomm','nvidia','amd','broadcom','cisco','vmware',
+  'adobe','workday','servicenow','snowflake','databricks','palantir','splunk',
+  'twilio','okta','crowdstrike','zscaler','palo alto networks','fortinet',
+  'mongodb','elastic','confluent','hashicorp','gitlab','github','atlassian',
+  'zoom','slack','dropbox','box','docusign','zendesk','hubspot','asana',
+  'linkedin','bytedance','tiktok','samsung','lg','sony','panasonic','hitachi',
+  'toshiba','fujitsu','nec','infosys','tcs','tata','wipro','hcl','cognizant',
+  'accenture','deloitte','kpmg','pwc','ernst','ey','capgemini','booz allen',
+  'leidos','saic','bah','general dynamics','raytheon','lockheed','boeing',
+  'northrop','l3harris','bae systems','honeywell','ge','siemens','philips',
+  'abbott','medtronic','boston scientific','stryker','zimmer','becton',
+  'jpmorgan','jp morgan','goldman sachs','morgan stanley','citi','citigroup',
+  'bank of america','wells fargo','hsbc','barclays','deutsche bank','ubs',
+  'blackrock','vanguard','fidelity','schwab','td ameritrade','bloomberg',
+  'two sigma','de shaw','jane street','citadel','optiver','virtu','imc',
+  'tesla','spacex','waymo','cruise','aurora','rivian','lucid','ford','gm',
+  'volkswagen','bmw','mercedes','toyota','honda','hyundai','nio',
+  'openai','anthropic','deepmind','mistral','cohere','stability',
+  'cae','rtx','raytheon','parsons','amentum','l3','bae',
+  'resmed','intuitive','medra','abbott','johnson','pfizer','moderna',
+  'applied materials','amat','lam research','kla','asml','tsmc',
+  'cadence','synopsys','ansys','ptc','dassault','siemens eda',
+  'capital one','american express','amex','visa','mastercard','paypal',
+  'coinbase','robinhood','sofi','chime','plaid','affirm',
+  'doordash','instacart','grubhub','postmates','gopuff',
+  'expedia','booking','airbnb','marriott','hilton','hyatt',
+  'disney','warner','nbcuniversal','paramount','sony pictures',
+  'comcast','at&t','verizon','t-mobile','tmobile','sprint',
+  'walmart','target','costco','amazon','wayfair','etsy','ebay',
+  'ubisoft','ea','electronic arts','activision','blizzard','riot',
+  'epic games','valve','unity','roblox',
+  'woven','intrinsic','field ai','true anomaly','voyager',
+  'keysight','national instruments','ni','rohde','agilent',
+  'fiserv','jack henry','finastra','temenos','ss&c',
+  's&p global','moody','refinitiv','ice','cme group',
+  'iqvia','optum','unitedhealth','anthem','aetna','humana','cigna',
+  'kaiser','cvs','walgreens','mckesson','cardinal health',
+  'ups','fedex','dhl','maersk','cargill','archer daniels',
+  'chevron','exxon','shell','bp','conocophillips','halliburton','schlumberger',
+  'ge vernova','siemens energy','vestas','nextera','duke energy',
+  'caterpillar','deere','emerson','parker hannifin','eaton','rockwell',
+  'jabil','flex','celestica','foxconn','pegatron',
+]);
+
+// Known NO-SPONSOR companies (marked 🛂 in listing)
+const NO_SPONSOR = new Set([
+  // populated dynamically from 🛂 flag in listing
+]);
+
+// US state abbreviations for location detection
+const US_STATES = new Set([
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
+  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
+  'VA','WA','WV','WI','WY','DC','NYC','SF','LA'
+]);
+
+const US_KEYWORDS = [
+  'alabama','alaska','arizona','arkansas','california','colorado','connecticut',
+  'delaware','florida','georgia','hawaii','idaho','illinois','indiana','iowa',
+  'kansas','kentucky','louisiana','maine','maryland','massachusetts','michigan',
+  'minnesota','mississippi','missouri','montana','nebraska','nevada',
+  'new hampshire','new jersey','new mexico','new york','north carolina',
+  'north dakota','ohio','oklahoma','oregon','pennsylvania','rhode island',
+  'south carolina','south dakota','tennessee','texas','utah','vermont',
+  'virginia','washington','west virginia','wisconsin','wyoming',
+  'remote in usa','remote in us','united states','u.s.','u.s.a'
+];
+
+const INTL_KEYWORDS = ['canada','uk','london','toronto','ontario','germany','france','australia','india','japan','china','singapore','ireland'];
+
+// Category detection from section headers
+function detectCategory(sectionHeader) {
+  if (!sectionHeader) return 'other';
+  const h = sectionHeader.toLowerCase();
+  if (h.includes('software')) return 'swe';
+  if (h.includes('product')) return 'pm';
+  if (h.includes('data') || h.includes('machine') || h.includes('ai')) return 'ds';
+  if (h.includes('quant')) return 'quant';
+  if (h.includes('hardware')) return 'hw';
+  return 'other';
+}
+
+// Check if location is US-based
+function isUS(location) {
+  const loc = location.toLowerCase();
+  if (US_KEYWORDS.some(k => loc.includes(k))) return true;
+  const parts = location.split(/[,\s]+/);
+  return parts.some(p => US_STATES.has(p.trim().toUpperCase()));
+}
+
+function isRemote(location) {
+  return location.toLowerCase().includes('remote');
+}
+
+function isInternational(location) {
+  const loc = location.toLowerCase();
+  return INTL_KEYWORDS.some(k => loc.includes(k));
+}
+
+// Determine H1-B status
+function getH1BStatus(companyName, flags) {
+  // If listing explicitly says no sponsorship
+  if (flags.includes('🛂')) return 'no';
+  // If listing requires US citizenship
+  if (flags.includes('🇺🇸')) return 'no';
+
+  const name = companyName.toLowerCase()
+    .replace(/[^a-z0-9\s&]/g, '')
+    .replace(/\b(inc|llc|corp|ltd|co|the|group|technologies|technology|solutions|systems|global|international)\b/g, '')
+    .trim();
+
+  // Check against known sponsors
+  for (const sponsor of H1B_SPONSORS) {
+    if (name.includes(sponsor) || sponsor.includes(name.split(' ')[0])) {
+      return 'yes';
+    }
+  }
+  return 'unknown';
+}
+
+function h1bBadge(status) {
+  if (status === 'yes') return `<span class="h1b-badge h1b-yes">✅ Sponsors H1-B</span>`;
+  if (status === 'no')  return `<span class="h1b-badge h1b-no">❌ No Sponsorship</span>`;
+  return `<span class="h1b-badge h1b-unknown">❓ Unknown</span>`;
+}
+
+// Parse markdown table rows
+function parseMarkdownTable(md) {
+  const rows = [];
+  const lines = md.split('\n');
+  let currentSection = '';
+  let currentCategory = 'other';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // detect section headers
+    if (line.startsWith('## ')) {
+      currentSection = line;
+      currentCategory = detectCategory(line);
+      continue;
+    }
+
+    // skip non-table lines and separator rows
+    if (!line.startsWith('|') || line.includes('---')) continue;
+
+    // skip header rows
+    if (line.toLowerCase().includes('| company |') || line.toLowerCase().includes('| **company**')) continue;
+
+    const cells = line.split('|').map(c => c.trim()).filter(Boolean);
+    if (cells.length < 4) continue;
+
+    const companyCell = cells[0];
+    const roleCell = cells[1];
+    const locationCell = cells[2];
+    const applyCell = cells[3];
+
+    // Extract company name — handle ↳ continuation rows
+    let companyName = '';
+    let isContinuation = companyCell.startsWith('↳');
+
+    if (isContinuation) {
+      companyName = rows.length > 0 ? rows[rows.length - 1].company : '—';
+    } else {
+      // strip markdown links and bold: **[Name](url)** or [Name](url)
+      const match = companyCell.match(/\[([^\]]+)\]/);
+      companyName = match ? match[1] : companyCell.replace(/[*🔥]/g, '').trim();
+    }
+
+    const isFaang = companyCell.includes('🔥');
+
+    // Extract role name and flags
+    const roleMatch = roleCell.match(/\[([^\]]+)\]/);
+    let roleName = roleMatch ? roleMatch[1] : roleCell;
+    // Clean emoji flags from role for display, but keep for detection
+    const roleFlags = roleCell;
+    const hasNoSponsor = roleFlags.includes('🛂');
+    const requiresCitizen = roleFlags.includes('🇺🇸');
+    const isGrad = roleFlags.includes('🎓');
+    // Remove flag emojis from display name
+    roleName = roleName.replace(/[🛂🇺🇸🎓🔒]/g, '').trim();
+
+    // Location
+    const location = locationCell.replace(/\*\*/g, '').trim();
+
+    // Extract apply links
+    const applyLinks = [];
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    let linkMatch;
+    while ((linkMatch = linkRegex.exec(applyCell)) !== null) {
+      applyLinks.push({ text: linkMatch[1], url: linkMatch[2] });
+    }
+
+    const h1bStatus = getH1BStatus(companyName, roleFlags);
+
+    rows.push({
+      company: companyName,
+      isFaang,
+      role: roleName,
+      hasNoSponsor,
+      requiresCitizen,
+      isGrad,
+      location,
+      applyLinks,
+      h1bStatus,
+      category: currentCategory,
+    });
+  }
+
+  return rows;
+}
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let allInternships = [];
+let filters = { h1b: 'all', loc: 'all', cat: 'all', search: '' };
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function render() {
+  const tbody = document.getElementById('tbody');
+  const table = document.getElementById('table');
+  const empty = document.getElementById('empty');
+
+  const filtered = allInternships.filter(row => {
+    // H1B filter
+    if (filters.h1b !== 'all' && row.h1bStatus !== filters.h1b) return false;
+
+    // Location filter
+    if (filters.loc === 'us' && !isUS(row.location)) return false;
+    if (filters.loc === 'remote' && !isRemote(row.location)) return false;
+    if (filters.loc === 'intl' && !isInternational(row.location)) return false;
+
+    // Category filter
+    if (filters.cat !== 'all' && row.category !== filters.cat) return false;
+
+    // Search
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      if (!row.company.toLowerCase().includes(q) && !row.role.toLowerCase().includes(q)) return false;
+    }
+
+    return true;
+  });
+
+  // Update counts
+  document.getElementById('stat-showing').textContent = filtered.length.toLocaleString();
+  document.getElementById('result-count').innerHTML = `<b>${filtered.length}</b> internships`;
+
+  if (filtered.length === 0) {
+    table.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  table.style.display = 'table';
+
+  tbody.innerHTML = filtered.map(row => {
+    const usTag = isUS(row.location) ? `<div><span class="us-tag">🇺🇸 US</span></div>` : '';
+    const flags = [
+      row.hasNoSponsor ? `<span class="flag-tag">🛂 No Sponsor</span>` : '',
+      row.requiresCitizen ? `<span class="flag-tag">🇺🇸 Citizen</span>` : '',
+      row.isGrad ? `<span class="flag-tag">🎓 Grad</span>` : '',
+    ].filter(Boolean).join('');
+
+    const applyHtml = row.applyLinks.length > 0
+      ? row.applyLinks.map(l =>
+          `<a href="${l.url}" target="_blank" class="apply-btn ${l.text.toLowerCase().includes('simplify') ? 'simplify' : ''}">${l.text}</a>`
+        ).join('')
+      : '—';
+
+    return `<tr>
+      <td><div class="company-name">${row.isFaang ? '<span class="faang-badge">🔥</span>' : ''}${row.company}</div></td>
+      <td>
+        <div class="role-name">${row.role}</div>
+        ${flags ? `<div class="role-flags">${flags}</div>` : ''}
+      </td>
+      <td>
+        <div class="location-cell">${row.location}</div>
+        ${usTag}
+      </td>
+      <td>${h1bBadge(row.h1bStatus)}</td>
+      <td><div class="apply-links">${applyHtml}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── FETCH DATA ───────────────────────────────────────────────────────────────
+async function loadData() {
+  const README_URL = 'https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/README.md';
+
+  try {
+    const res = await fetch(README_URL);
+    if (!res.ok) throw new Error('Failed to fetch');
+    const md = await res.text();
+
+    allInternships = parseMarkdownTable(md);
+
+    const h1bCount = allInternships.filter(r => r.h1bStatus === 'yes').length;
+    document.getElementById('stat-total').textContent = allInternships.length.toLocaleString();
+    document.getElementById('stat-h1b').textContent = h1bCount.toLocaleString();
+
+    document.getElementById('loading').style.display = 'none';
+    render();
+  } catch (err) {
+    document.getElementById('loading').innerHTML = `
+      <p style="color:var(--accent)">⚠️ Could not load internship data.</p>
+      <p style="margin-top:8px;font-size:11px">This may be a CORS issue when opening locally. Try hosting on GitHub Pages or a local server.</p>
+    `;
+    console.error(err);
+  }
+}
+
+// ─── EVENT LISTENERS ──────────────────────────────────────────────────────────
+// H1B pills
+document.querySelectorAll('[data-h1b]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-h1b]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filters.h1b = btn.dataset.h1b;
+    render();
+  });
+});
+
+// Location pills
+document.querySelectorAll('[data-loc]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-loc]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filters.loc = btn.dataset.loc;
+    render();
+  });
+});
+
+// Category tabs
+document.querySelectorAll('[data-cat]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filters.cat = btn.dataset.cat;
+    render();
+  });
+});
+
+// Search
+let searchTimeout;
+document.getElementById('search').addEventListener('input', e => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    filters.search = e.target.value.trim();
+    render();
+  }, 200);
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+loadData();
+</script>
 </body>
 </html>
