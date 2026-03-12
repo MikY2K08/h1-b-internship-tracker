@@ -811,7 +811,8 @@ function render() {
 
 // ─── FETCH DATA ───────────────────────────────────────────────────────────────
 async function loadData() {
-  const README_URL = 'https://api.github.com/repos/SimplifyJobs/Summer2026-Internships/contents/README.md?ref=dev';
+  const README_URL = 'https://api.github.com/repos/SimplifyJobs/
+  const README_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/README.md');
 
   try {
     console.log('Fetching data...');
@@ -819,7 +820,7 @@ async function loadData() {
     console.log('Response status:', res.status);
     const data = await res.json();
     console.log('Data received:', data);
-    const md = atob(data.content.split('\n').join(''));
+    const md = await res.text();
     console.log('Markdown length:', md.length);
     allInternships = parseMarkdownTable(md);
     console.log('Parsed internships:', allInternships.length);
